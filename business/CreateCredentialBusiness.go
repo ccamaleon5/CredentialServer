@@ -100,6 +100,8 @@ func CreateCredential(subjects []*models.CredentialSubject, nodeURL string, issu
 		credentialHash := sha256.Sum256(rawCredential)
 
 		fmt.Println("###Date###",date)
+		fmt.Println("###Date Location###:", date.Local())
+		//fmt.Println("###Date Location###:", date.Zone())
 		fmt.Println("###Expiration Millis###",big.NewInt(date.Unix()))
 
 		err, tx := client.SignCredential(address, options, credentialHash, big.NewInt(date.Unix()))

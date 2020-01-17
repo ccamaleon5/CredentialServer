@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"time"
 	"fmt"
 	"log"
 	"math/big"
@@ -177,8 +178,19 @@ func (ec *Client) VerifyCredential(contractAddress common.Address, credential []
 
 	cmp := result.Exp.Cmp(big.NewInt(0))
 
+	log.Println("cmp:",cmp)
+
 	if cmp > 0 {
-		log.Println("Credential is valid")
+		log.Println("time actual:",time.Now().Unix())
+		cmp2 := result.Exp.Cmp(big.NewInt(time.Now().Unix()))
+		if cmp2 > 0{
+			log.Println("Credential hasn't expired")
+			log.Println("Credential is valid")
+		}else{
+			log.Println("Credential has expired")
+			log.Println("Credential is invalid")
+			return false, nil
+		}
 		return true, nil
 	}
 
