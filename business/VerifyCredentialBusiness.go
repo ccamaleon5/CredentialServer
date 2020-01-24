@@ -2,7 +2,7 @@ package business
 
 import (
 	"encoding/json"
-	"errors"
+//	"errors"
 	"log"
 
 	bl "github.com/ccamaleon5/CredentialServer/blockchain"
@@ -31,8 +31,8 @@ func VerifyCredential(credentials []*models.Credential, nodeURL string, publicAd
 
 	contractAddress := common.HexToAddress(verificationContract)
 	address := common.HexToAddress(publicAddress)
-	failsID := make([]string, 0, 10)
-	var fail error
+	//failsID := make([]string, 0, 10)
+	//var fail error
 
 	//iterate credential and verify
 	for _, credential := range credentials {
@@ -47,16 +47,18 @@ func VerifyCredential(credentials []*models.Credential, nodeURL string, publicAd
 			return nil, err
 		}
 		if !result {
-			failsID = append(failsID, *credential.ID)
-			fail = errors.New("Failed verifying credentials")
+			response.Valid = false
+			errorResponse.Code = "400"
+			errorResponse.Message = "Credential is invalid"
 		}
 	}
 
-	if fail != nil {
-		errorResponse.Code = "501"
+	/*if fail != nil {
+		response.Valid = false
+		errorResponse.Code = "400"
 		errorResponse.Message = "Credential isn't valid"
 		return response, fail
-	}
+	}*/
 
 	return response, nil
 }

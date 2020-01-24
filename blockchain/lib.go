@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+//	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/ccamaleon5/CredentialServer/util"
@@ -91,11 +92,11 @@ func (ec *Client) ConfigTransaction(pk string) (*bind.TransactOpts, error) {
 }
 
 //SignCredential into blockchain
-func (ec *Client) SignCredential(contractAddress common.Address, options *bind.TransactOpts, credentialHash [32]byte, duration *big.Int) (error, string) {
+func (ec *Client) SignCredential(contractAddress common.Address, options *bind.TransactOpts, credentialHash [32]byte, duration *big.Int) (error, *common.Hash) {
 	contract, err := store.NewStore(contractAddress, ec.client)
 	if err != nil {
 		log.Printf("Can't instance contract: %s", err)
-		return err, "0x0"
+		return err, nil
 	}
 
 	log.Println("Verification Contract instanced")
@@ -113,11 +114,14 @@ func (ec *Client) SignCredential(contractAddress common.Address, options *bind.T
 	tx, err := contract.Verify(options, credentialHash, duration)
 	if err != nil {
 		log.Println("Error calling contract:", err)
-		return err, "0x0"
+		return err, nil
 	}
 
 	log.Printf("Tx sent: %s", tx.Hash().Hex())
-	return nil, tx.Hash().Hex()
+
+	fff := tx.Hash()
+
+	return nil, &fff
 }
 
 //RevokeCredential into blockchain
@@ -267,4 +271,26 @@ func (ec *Client) DeployRepositoryContract(pk string) (string, error) {
 	log.Println("repository contract address:", contractAddress.Hex())
 	log.Println("tx:", tx.Hash().Hex())
 	return contractAddress.Hex(), nil
+}
+
+//GetTransactionReceipt ...
+func (ec *Client) GetTransactionReceipt(transactionHash common.Hash)(*big.Int, string, error){
+	receipt, err := ec.client.TransactionReceipt(context.Background(), transactionHash)
+        if err != nil {
+            log.Fatal(err)
+		}
+		
+	log.Println("Status:",receipt.Status)
+	log.Println("BlockNumber:",receipt.BlockNumber)
+
+	block, err := ec.client.BlockByNumber(context.Background(), receipt.BlockNumber)
+    if err != nil {
+        log.Fatal(err)
+	}
+	
+	log.Println("block time:",block.Time())
+
+	ts := time.Unix(int64(block.Time()),0).UTC()
+
+	return receipt.BlockNumber, ts.String(), nil
 }

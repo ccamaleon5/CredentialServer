@@ -8,17 +8,20 @@
 package business
 
 import (
-	"bytes"
+//	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+//	"io/ioutil"
 	"log"
 	"math/big"
-	"net/http"
+//	"net/http"
+	"net/smtp"
+	"net/mail"
+	"net"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -101,20 +104,29 @@ func CreateCredential(subjects []*models.CredentialSubject, nodeURL string, issu
 
 		fmt.Println("###Date###",date)
 		fmt.Println("###Date Location###:", date.Local())
-		//fmt.Println("###Date Location###:", date.Zone())
 		fmt.Println("###Expiration Millis###",big.NewInt(date.Unix()))
 
 		err, tx := client.SignCredential(address, options, credentialHash, big.NewInt(date.Unix()))
 		if err != nil {
 			fmt.Println("Transaction wasn't sent")
 		}
+		//waiting for mining
+		time.Sleep(4 * time.Second)
+
+		blockNumber, timestamp, err:=client.GetTransactionReceipt(*tx)
+		if err != nil{
+			fmt.Println("Failed to get Receipt:",err)
+		} 
+
+		fmt.Println("BlockkkNumber:",blockNumber)
+		fmt.Println("BlockkkNumber:",timestamp)
 
 		qrFile, err := generateQR("http://credentialserver.iadb.org/", credentialHash, getNameSubject(subject.Content))
 		if err != nil {
 			fmt.Printf("Failed generate QR: %s", err)
 		}
 
-		err = sendCredentialByEmail(getReceiverMail(subject.Content), string(rawCredential), tx, getNameSubject(subject.Content), getLastNameSubject(subject.Content), qrFile)
+		err = sendCredentialByEmail("Marcos", subject.Email, []byte(string(rawCredential)), tx.Hex(),blockNumber,timestamp, subject.ExpirationDate.String(), qrFile)
 		if err != nil {
 			fmt.Printf("Failed to send email: %s", err)
 		}
@@ -146,170 +158,67 @@ func getProof(typeProof string, verificationMethod string) *models.Proof {
 	return proof
 }
 
-func sendCredentialByEmail(destination, credential, tx, firstName, lastName string, qrFile []byte) error {
-	jsonData := models.MailRequest{FolderId: 13233, Name: firstName + ".png", FileData: base64.StdEncoding.EncodeToString(qrFile)}
-	jsonValue, _ := json.Marshal(jsonData)
+func sendCredentialByEmail(name string, destination string, credential []byte, tx string, blockNumber *big.Int, timestamp string, expirationDate string, qrFile []byte) error {
+	from := mail.Address{"", "notarization@lacchain.net"}
+    to   := mail.Address{"", destination}
+    subj := "LACCchain - Your document's credential"
 
-	request, err := http.NewRequest("POST", "https://us7.api.mailchimp.com/3.0/file-manager/files", bytes.NewBuffer(jsonValue))
-	request.Header.Add("Authorization", "/apikey 6e29f9fe593c0caaef0caf99ef8ef499-us7")
+    // Setup headers
+    headers := make(map[string]string)
+    headers["From"] = from.String()
+    headers["To"] = to.String()
+    headers["Subject"] = subj
 
-	// Send req using http Client
-	client := &http.Client{}
-	resp, err := client.Do(request)
-	if err != nil {
-		log.Println("Error on response.\n[ERRO] -", err)
-		return err
+    // Setup message
+    message := ""
+    for k,v := range headers {
+        message += fmt.Sprintf("%s: %s\r\n", k, v)
+	}
+	
+	log.Println("Mark content to accept multiple contents")
+	message += "MIME-Version: 1.0\r\n"
+	message += fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n", "**=myohmy689407924327")
+
+    //place HTML message
+	log.Println("Put HTML message")
+	message += fmt.Sprintf("\r\n--%s\r\n", "**=myohmy689407924327")
+	message += "Content-Type: text/html; charset=\"utf-8\"\r\n"
+	message += "Content-Transfer-Encoding: 7bit\r\n"
+	message += fmt.Sprintf("\r\n%s", "<html><body><h1>Dear "+name+"</h1><p>Congratulations! The hash of your file has been registered successfully in the LACChain Blockchain Network. The hash was registered at "+timestamp+" in the transaction "+tx+", that is in the block "+blockNumber.String()+". Attached is your verifiable credential, that will be valid until the expiration date "+expirationDate+" set by yourself.</p>" +
+		"<p>If you have any questions, please do not hesitate to reach our to us at info@lacchain.net.</p>"+
+		"<p>Best,</p><p>The LACChain Alliance</p></body></html>\r\n")
+
+	//put QR credential
+	log.Println("Put HTML message")
+	message += fmt.Sprintf("\r\n--%s\r\n", "**=myohmy689407924327")
+	message += "Content-Type: image/png;\r\n"
+	message += "Content-Transfer-Encoding: base64\r\n"
+	message += "\r\n" + base64.StdEncoding.EncodeToString(qrFile)		
+
+	log.Println("Put file attachment")
+	message += fmt.Sprintf("\r\n--%s\r\n", "**=myohmy689407924327")
+	message += "Content-Type: text/plain; charset=\"utf-8\"\r\n"
+	message += "Content-Transfer-Encoding: base64\r\n"
+	message += "Content-Disposition: attachment;filename=\"" + "credential.json" + "\"\r\n"
+	message += "\r\n" + base64.StdEncoding.EncodeToString(credential)
+
+    // Connect to the SMTP Server
+    servername := "smtp.serviciodecorreo.es:587"
+
+    host, _, _ := net.SplitHostPort(servername)
+
+	auth := smtp.PlainAuth("", "notarization@lacchain.net", "Hashing00", host)
+
+	recipients := []string{destination}
+
+	err1 := smtp.SendMail(servername, auth, "notarization@lacchain.net", recipients, []byte(message))
+	if err1 != nil {
+		log.Fatal("Error:",err1)
 	}
 
-	body, _ := ioutil.ReadAll(resp.Body)
-	log.Println(string([]byte(body)))
-
-	//Send Email
-
-	var result map[string]interface{}
-	json.Unmarshal(body, &result)
-
-	fullURL := getFullURL(result)
-
-	mergeFields := models.MergeFields{FNAME: firstName, LNAME: lastName, MMERGE5: fullURL, MMERGE6: tx}
-	emailData := models.SendMailRequest{EmailAddress: destination, Status: "subscribed", MergeFields: mergeFields}
-	emailValue, _ := json.Marshal(emailData)
-	request, err = http.NewRequest("POST", "https://us7.api.mailchimp.com/3.0/lists/4a956ef616/members", bytes.NewBuffer(emailValue))
-	request.Header.Add("Authorization", "/apikey 6e29f9fe593c0caaef0caf99ef8ef499-us7")
-
-	resp, err = client.Do(request)
-	if err != nil {
-		log.Println("Error on response.\n[ERRO] -", err)
-		return err
-	}
-
-	body, _ = ioutil.ReadAll(resp.Body)
-	log.Println(string([]byte(body)))
-
+	log.Print("Your mail was sent")
 	return nil
 }
-
-/*
-func sendCredentialByEmail(destination, credential, tx string) error { // Create a new session and specify an AWS Region.
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(AwsRegion)},
-	)
-
-	// Create an SES client in the session.
-	svc := ses.New(sess)
-
-	// Assemble the email.
-	// The HTML body for the email.
-	HtmlBody := "<h1>Itama Cursos</h1><p>Tu credencial fue registrada en la Blockchain " +
-		"<a href='https://ropsten.etherscan.io/tx/" + tx + "'>Ethereum Block Explorer</a> using the " +
-		"<a href='https://aws.amazon.com/sdk-for-go/'>Go</a>.</p>"
-
-	input, err := buildEmailInput(Sender, destination, Subject, HtmlBody,
-		[]byte(credential))
-	if err != nil {
-		fmt.Println("Error al enviar", err)
-	}
-
-	// Attempt to send the email.
-	result, err := svc.SendRawEmail(input)
-
-	// Display error messages if they occur.
-	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case ses.ErrCodeMessageRejected:
-				fmt.Println(ses.ErrCodeMessageRejected, aerr.Error())
-			case ses.ErrCodeMailFromDomainNotVerifiedException:
-				fmt.Println(ses.ErrCodeMailFromDomainNotVerifiedException, aerr.Error())
-			case ses.ErrCodeConfigurationSetDoesNotExistException:
-				fmt.Println(ses.ErrCodeConfigurationSetDoesNotExistException, aerr.Error())
-			default:
-				fmt.Println(aerr.Error())
-			}
-		} else {
-			// Print the error, cast err to awserr.Error to get the Code and
-			// Message from an error.
-			fmt.Println(err.Error())
-		}
-		return err
-	}
-
-	fmt.Println("Email Sent!")
-	fmt.Println(result)
-
-	return nil
-}
-
-func buildEmailInput(source, destination, subject, message string,
-	credentialFile []byte) (*ses.SendRawEmailInput, error) {
-
-	buf := new(bytes.Buffer)
-	writer := multipart.NewWriter(buf)
-
-	// email main header:
-	h := make(textproto.MIMEHeader)
-	h.Set("From", source)
-	h.Set("To", destination)
-	h.Set("Return-Path", source)
-	h.Set("Subject", subject)
-	h.Set("Content-Language", "en-US")
-	h.Set("Content-Type", "multipart/mixed; boundary=\""+writer.Boundary()+"\"")
-	h.Set("MIME-Version", "1.0")
-	_, err := writer.CreatePart(h)
-	if err != nil {
-		return nil, err
-	}
-
-	// body:
-	h = make(textproto.MIMEHeader)
-	h.Set("Content-Transfer-Encoding", "7bit")
-	h.Set("Content-Type", "text/plain; charset=us-ascii")
-	part, err := writer.CreatePart(h)
-	if err != nil {
-		return nil, err
-	}
-	_, err = part.Write([]byte(message))
-	if err != nil {
-		return nil, err
-	}
-
-	// file attachment:
-	fn := "credential.json"
-	h = make(textproto.MIMEHeader)
-	h.Set("Content-Disposition", "attachment; filename="+fn)
-	h.Set("Content-Type", "application/json; x-unix-mode=0644; name=\""+fn+"\"")
-	h.Set("Content-Transfer-Encoding", "7bit")
-	part, err = writer.CreatePart(h)
-	if err != nil {
-		return nil, err
-	}
-	_, err = part.Write(credentialFile)
-	if err != nil {
-		return nil, err
-	}
-	err = writer.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	// Strip boundary line before header (doesn't work with it present)
-	s := buf.String()
-	if strings.Count(s, "\n") < 2 {
-		return nil, fmt.Errorf("invalid e-mail content")
-	}
-	s = strings.SplitN(s, "\n", 2)[1]
-
-	raw := ses.RawMessage{
-		Data: []byte(s),
-	}
-	input := &ses.SendRawEmailInput{
-		Destinations: []*string{aws.String(destination)},
-		Source:       aws.String(source),
-		RawMessage:   &raw,
-	}
-
-	return input, nil
-}*/
 
 func generateQR(url string, hashCredential [32]byte, filename string) ([]byte, error) {
 	var hash = make([]byte, 32, 64)

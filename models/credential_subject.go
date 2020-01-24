@@ -33,6 +33,9 @@ type CredentialSubject struct {
 
 	// Credential Type
 	Type string `json:"type,omitempty"`
+
+	// mail of contact
+	Email string `json:"email,omitempty"`
 }
 
 // Validate validates this credential subject
