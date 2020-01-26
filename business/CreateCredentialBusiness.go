@@ -75,20 +75,23 @@ func CreateCredential(subjects []*models.CredentialSubject, nodeURL string, issu
 	credentials := make([]*models.Credential, 0, 50)
 	for _, subject := range subjects {
 		credential := new(models.Credential)
+		credentialData := new(models.CredentialData)
+		credentialMetadata := new(models.CredentialMetadata)
 		id := generateID()
-		credential.ID = &id
+		credentialData.ID = &id
 		types := make([]string, 0, 4)
 		types = append(types, "VerifiableCredential")
 		types = append(types, subject.Type)
-		credential.Type = types
-		credential.CredentialSubject = subject.Content
-		credential.IssuanceDate = subject.IssuanceDate
-		credential.Evidence = subject.Evidence
-		credential.Issuer = issuer
-		credential.Proof = getProof("SmartContract", verificationContract)
+		credentialData.Type = types
+		credentialData.CredentialSubject = subject.Content
+		credentialData.IssuanceDate = subject.IssuanceDate
+		credentialData.Evidence = subject.Evidence
+		credentialData.Issuer = issuer
+		credentialData.Proof = getProof("SmartContract", verificationContract)
+		credential.CredentialData = credentialData
 		credentials = append(credentials, credential)
 
-		rawCredential, err := json.Marshal(credential)
+		rawCredential, err := json.Marshal(credentialData)
 		if err != nil {
 			return nil, errors.New("Credential isn't Json format")
 		}
@@ -120,6 +123,12 @@ func CreateCredential(subjects []*models.CredentialSubject, nodeURL string, issu
 
 		fmt.Println("BlockkkNumber:",blockNumber)
 		fmt.Println("BlockkkNumber:",timestamp)
+
+		credentialMetadata.BlockNumber = blockNumber.String()
+		credentialMetadata.Timestamp = timestamp
+		credentialMetadata.Transaction = tx.Hex()
+
+		credential.Metadata = credentialMetadata
 
 		qrFile, err := generateQR("http://credentialserver.iadb.org/", credentialHash, getNameSubject(subject.Content))
 		if err != nil {

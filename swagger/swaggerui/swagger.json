@@ -251,7 +251,7 @@
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/Credential"
+                "$ref": "#/definitions/CredentialData"
               }
             }
           }
@@ -413,6 +413,40 @@
     },
     "Credential": {
       "type": "object",
+      "properties": {
+        "credentialData": {
+          "$ref": "#/definitions/CredentialData"
+        },
+        "metadata": {
+          "$ref": "#/definitions/CredentialMetadata"
+        }
+      },
+      "xml": {
+        "name": "Credential"
+      }
+    },
+    "CredentialMetadata": {
+      "type": "object",
+      "properties": {
+        "blockNumber": {
+          "type": "string",
+          "description": "The block number where the transaction was inserted"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The dateTime when the block was generated YYYY-MM-DDTHH:MM:SSZ"
+        },
+        "transaction": {
+          "type": "string",
+          "description": "The transaction hash"
+        }
+      },
+      "xml": {
+        "name": "CredentialMetadata"
+      }
+    },
+    "CredentialData": {
+      "type": "object",
       "required": [
         "id",
         "type",
@@ -477,7 +511,7 @@
         }
       },
       "xml": {
-        "name": "Credential"
+        "name": "CredentialData"
       }
     }
   },

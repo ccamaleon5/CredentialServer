@@ -42,17 +42,18 @@ func RenewCredential(credentialID string, subject *models.CredentialSubject, nod
 
 	//generate new credential
 	credential := new(models.Credential)
-	credential.ID = &credentialID
+	credentialData := new(models.CredentialData)
+	credentialData.ID = &credentialID
 	types := make([]string, 0, 4)
 	types = append(types, "VerifiableCredential")
 	types = append(types, subject.Type)
-	credential.Type = types
-	credential.CredentialSubject = subject.Content
-	credential.Evidence = subject.Evidence
-	credential.Issuer = issuer
-	credential.Proof = getProof("SmartContract", verificationContract)
+	credentialData.Type = types
+	credentialData.CredentialSubject = subject.Content
+	credentialData.Evidence = subject.Evidence
+	credentialData.Issuer = issuer
+	credentialData.Proof = getProof("SmartContract", verificationContract)
 
-	rawCredential, err := json.Marshal(credential)
+	rawCredential, err := json.Marshal(credentialData)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +73,7 @@ func RenewCredential(credentialID string, subject *models.CredentialSubject, nod
 	if err != nil {
 		return nil, err
 	}
-	idHash := sha256.Sum256([]byte(*credential.ID))
+	idHash := sha256.Sum256([]byte(*credentialData.ID))
 
 	var hashito = make([]byte, 32, 64)
 

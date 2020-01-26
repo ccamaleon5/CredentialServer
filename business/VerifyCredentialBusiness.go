@@ -36,8 +36,9 @@ func VerifyCredential(credentials []*models.Credential, nodeURL string, publicAd
 
 	//iterate credential and verify
 	for _, credential := range credentials {
-		log.Printf("Verifying credential ID: %s", *credential.ID)
-		rawCredential, err := json.Marshal(credential)
+		credentialData := credential.CredentialData
+		log.Printf("Verifying credential ID: %s", *credentialData.ID)
+		rawCredential, err := json.Marshal(credentialData)
 		if err != nil {
 			log.Println("Credential isn't a json format")
 			return nil, err
