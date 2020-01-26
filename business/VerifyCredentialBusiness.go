@@ -12,7 +12,7 @@ import (
 )
 
 //VerifyCredential saved into blockchain
-func VerifyCredential(credentials []*models.Credential, nodeURL string, publicAddress string, verificationContract string) (*models.VerifyResponse, error) {
+func VerifyCredential(credentials []*models.CredentialData, nodeURL string, publicAddress string, verificationContract string) (*models.VerifyResponse, error) {
 	client := new(bl.Client)
 	err := client.Connect(nodeURL)
 
@@ -36,9 +36,9 @@ func VerifyCredential(credentials []*models.Credential, nodeURL string, publicAd
 
 	//iterate credential and verify
 	for _, credential := range credentials {
-		credentialData := credential.CredentialData
-		log.Printf("Verifying credential ID: %s", *credentialData.ID)
-		rawCredential, err := json.Marshal(credentialData)
+		//credentialData := credential.CredentialData
+		log.Printf("Verifying credential ID: %s", *credential.ID)
+		rawCredential, err := json.Marshal(credential)
 		if err != nil {
 			log.Println("Credential isn't a json format")
 			return nil, err

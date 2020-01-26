@@ -135,7 +135,7 @@ func CreateCredential(subjects []*models.CredentialSubject, nodeURL string, issu
 			fmt.Printf("Failed generate QR: %s", err)
 		}
 
-		err = sendCredentialByEmail("Marcos", subject.Email, []byte(string(rawCredential)), tx.Hex(),blockNumber,timestamp, subject.ExpirationDate.String(), qrFile)
+		err = sendCredentialByEmail(getNameSubject(subject.Content), subject.Email, []byte(string(rawCredential)), tx.Hex(),blockNumber,timestamp, subject.ExpirationDate.String(), qrFile)
 		if err != nil {
 			fmt.Printf("Failed to send email: %s", err)
 		}
@@ -249,7 +249,7 @@ func generateID() string {
 
 func getNameSubject(contentSubject interface{}) string {
 	content := contentSubject.(map[string]interface{})
-	name := content["name"]
+	name := content["author"]
 
 	return fmt.Sprintf("%v", name)
 }

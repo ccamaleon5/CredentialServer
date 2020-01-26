@@ -122,7 +122,7 @@ func init() {
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/Credential"
+                "$ref": "#/definitions/CredentialData"
               }
             }
           }
@@ -644,7 +644,7 @@ func init() {
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/Credential"
+                "$ref": "#/definitions/CredentialData"
               }
             }
           }
