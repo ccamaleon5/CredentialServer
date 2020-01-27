@@ -193,7 +193,7 @@ func sendCredentialByEmail(name string, destination string, credential []byte, t
 	message += fmt.Sprintf("\r\n--%s\r\n", "**=myohmy689407924327")
 	message += "Content-Type: text/html; charset=\"utf-8\"\r\n"
 	message += "Content-Transfer-Encoding: 7bit\r\n"
-	message += fmt.Sprintf("\r\n%s", "<html><body><h1>Dear "+name+"</h1><p>Congratulations! The hash of your file has been registered successfully in the LACChain Blockchain Network. The hash was registered at "+timestamp+" in the transaction "+tx+", that is in the block "+blockNumber.String()+". Attached is your verifiable credential, that will be valid until the expiration date "+expirationDate+" set by yourself.</p>" +
+	message += fmt.Sprintf("\r\n%s", "<html><body><p>Dear "+name+"</p><p>Congratulations! The hash of your file has been registered successfully in the LACChain Blockchain Network. The hash was registered at "+timestamp+" in the transaction "+tx+", that is in the block "+blockNumber.String()+". Attached is your verifiable credential, that will be valid until the expiration date "+expirationDate+" set by yourself.</p>" +
 		"<p>If you have any questions, please do not hesitate to reach our to us at info@lacchain.net.</p>"+
 		"<p>Best,</p><p>The LACChain Alliance</p></body></html>\r\n")
 
