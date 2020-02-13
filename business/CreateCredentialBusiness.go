@@ -222,7 +222,7 @@ func sendCredentialByEmail(name string, destination string, credential []byte, t
 
 	err1 := smtp.SendMail(servername, auth, "notarization@lacchain.net", recipients, []byte(message))
 	if err1 != nil {
-		log.Fatal("Error:",err1)
+		log.Println("Error:",err1)
 	}
 
 	log.Print("Your mail was sent")

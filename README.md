@@ -20,18 +20,18 @@ The Credentials are verifiable against blockchain default, but you can configure
 2. **lib** contains most of the code.
 3. **blockchain** contains smart contracts, ABIs, connections to Ethereum
 4. **business** contains business logic that will be consume by APIs
-5. **models** conatins data models of requests and responses of APIs
+5. **models** contains data models of requests and responses of APIs
 6. **swagger** contains documentation about APIs in Swagger and SwaggerUI to visualize this documentation
 7. **util** contains util functions about files and ethereum address
 
 ## Install
 
 ```
-$ git clone https://github.com/ccamaleon5/CredentialMother
+$ git clone https://github.com/ccamaleon5/CredentialServer
 
 $ export GO111MODULE=on
 
-$ cd CredentialMother
+$ cd CredentialMother/cmd/credential-provider-server
 $ go build
 ```
 
@@ -52,7 +52,7 @@ You can try in localhost:8000/swagger-ui/
 * Clone this repository
 
 ```
-$ git clone https://github.com/ccamaleon5/CredentialProvider
+$ git clone https://github.com/ccamaleon5/CredentialServer
 ```
 
 * Create a local directory that saves application data  
@@ -61,20 +61,30 @@ $ git clone https://github.com/ccamaleon5/CredentialProvider
 $ mkdir /CredentialData
 ```
 
-* Copy the configuration file and swaggerui from repository to your local directory created above:
+* Copy the YAML configuration file and swaggerui from repository to your local directory created above:
 
 ```
-$ cp repo/CredentialProvider/credential-provider-server-config-yaml /CredentialData/
-$ cp -r repo/CredentialProvider/swagger/swaggerui  /CredentialData/ 
+$ cp repo/CredentialServer/credential-provider-server-config.yaml /CredentialData/
+$ cp -r repo/CredentialServer/swagger/swaggerui  /CredentialData/ 
 
 ```
 
-* Now pull the docker image and run the container, setting your node identity and the folder location that will be the volume 
+* Now set your parameters into the file credential-provider-server-config.yaml
+
+* Create a directory that will store the keystore which save the private key 
 
 ```
-$ docker pull aparejaa/credentialprovider:1.0.0
-$ docker run -dit -v {CredentialProvider_DIR}:/CredentialProvider -p 8000:8000 -p 8001:8001 aparejaa/credentialprovider:1.0.0 credential-provider-server init [-x PASSWORD]
-$ docker run -dit -v {CredentialProvider_DIR}:/CredentialProvider -p 8000:8000 -p 8001:8001 aparejaa/credentialprovider:1.0.0
+$ mkdir -p /CredentialData/keystore
+```
+
+* After that, save your keystore into this directory 
+
+* Finally pull the docker image and run the container, setting your node identity and the folder location that will be the volume 
+
+```
+$ docker pull ccamaleon5/credentialserver:1.0.0
+$ docker run -dit -v {CredentialServer_DIR}:/CredentialProvider -p 8000:8000 -p 8001:8001 aparejaa/credentialserver:1.0.0 credential-provider-server init [-x PASSWORD]
+$ docker run -dit -v {CredentialServer_DIR}:/CredentialProvider -p 8000:8000 -p 8001:8001 aparejaa/credentialserver:1.0.0
 ```
 
 * The container will create KeyStore in your local volume

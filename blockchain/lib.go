@@ -33,7 +33,7 @@ type Client struct {
 func (ec *Client) Connect(nodeURL string) error {
 	client, err := ethclient.Dial(nodeURL)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return err
 	}
 
@@ -51,7 +51,7 @@ func (ec *Client) Close() {
 func (ec *Client) ConfigTransaction(pk string) (*bind.TransactOpts, error) {
 	privateKey, err := crypto.HexToECDSA(pk)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return nil, err
 	}
 
@@ -264,7 +264,7 @@ func (ec *Client) DeployRepositoryContract(pk string) (string, error) {
 	}
 	contractAddress, tx, _, err := store.DeployRepository(options, ec.client)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return "", err
 	}
 
@@ -277,7 +277,7 @@ func (ec *Client) DeployRepositoryContract(pk string) (string, error) {
 func (ec *Client) GetTransactionReceipt(transactionHash common.Hash)(*big.Int, string, error){
 	receipt, err := ec.client.TransactionReceipt(context.Background(), transactionHash)
         if err != nil {
-            log.Fatal(err)
+            log.Println(err)
 		}
 		
 	log.Println("Status:",receipt.Status)
@@ -285,7 +285,7 @@ func (ec *Client) GetTransactionReceipt(transactionHash common.Hash)(*big.Int, s
 
 	block, err := ec.client.BlockByNumber(context.Background(), receipt.BlockNumber)
     if err != nil {
-        log.Fatal(err)
+        log.Println(err)
 	}
 	
 	log.Println("block time:",block.Time())
